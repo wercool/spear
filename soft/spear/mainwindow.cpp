@@ -24,11 +24,19 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
     {
         ui->serialPortsComboBox->addItem(serialPortInfo.portName());
     }
+
+    connect(serialPort, &QSerialPort::readyRead, this, &MainWindow::serialReadData);
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    on_closePortButton_clicked();
+    event->accept();
 }
 
 void MainWindow::on_openPortButton_clicked()
@@ -42,10 +50,10 @@ void MainWindow::on_openPortButton_clicked()
     serialPort->setFlowControl(QSerialPort::SoftwareControl);
 
     if (serialPort->open(QIODevice::ReadWrite)){
-        qDebug() << "Serial port " + selectedPort + " opened successfully";
-        ui->logOutput->append("Serial port <b>" + selectedPort + "</b> opened successfully\n");
+        portOpened = true;
+        serialPort->setRequestToSend(false);
+        ui->logOutput->append("Serial port <b>" + selectedPort + "</b> opened successfully");
     } else {
-        qDebug() << serialPort->errorString();
         msgBox.setText(serialPort->errorString());
         msgBox.exec();
     }
@@ -55,9 +63,12 @@ void MainWindow::on_openPortButton_clicked()
 
 void MainWindow::on_closePortButton_clicked()
 {
-    serialPort->close();
-    qDebug() << "Serial port " + selectedPort + " closed";
-    ui->logOutput->append("Serial port <b>" + selectedPort + "</b> closed\n");
+    if (serialPort->isOpen()) {
+        serialPort->close();
+        portOpened = false;
+        ui->logOutput->append("Serial port <b>" + selectedPort + "</b> closed");
+        qDebug() << "Serial port " + selectedPort + " closed";
+    }
 }
 
 
@@ -74,5 +85,58 @@ void MainWindow::on_refreshPortListpushButton_clicked()
     {
         ui->serialPortsComboBox->addItem(serialPortInfo.portName());
     }
+}
+
+void MainWindow::sendCommand(QString command) {
+    QString logMessage;
+    if (portOpened) {
+        serialPort->setRequestToSend(true);
+        QByteArray buffer = "!{" + QByteArray::fromStdString(command.toStdString()) + "}!\n";
+        serialPort->write(buffer);
+        serialPort->setRequestToSend(false);
+
+        qDebug() << "← " + QString(buffer);
+
+        logMessage = QString("<span style='color: #aaaaaa;'>%1: ← %2</span>")
+                    .arg(QDateTime::currentMSecsSinceEpoch() - startTime)
+                    .arg(QString(buffer));
+    } else {
+        logMessage = "<span style='color: red;'>Port is not opened</span>";
+    }
+
+    ui->logOutput->append(logMessage);
+}
+
+void MainWindow::serialReadData()
+{
+   QByteArray data = serialPort->readAll();
+   charBuffer.append(data);
+
+   strBuffer = QString(charBuffer);
+
+   if (strBuffer.startsWith("!{") && strBuffer.endsWith("}!\n"))
+   {
+       qDebug() << "→ " + strBuffer;
+
+       strBuffer = strBuffer.trimmed();
+
+       QString logMessage = QString("<span style='color: #aaaaaa;'>%1:</span> → %2")
+                           .arg(QDateTime::currentMSecsSinceEpoch() - startTime)
+                           .arg(QString(strBuffer));
+       ui->logOutput->append(logMessage);
+
+       charBuffer = "";
+       strBuffer = "";
+   }
+
+   if (strBuffer.length() > 1024) {
+       strBuffer = "";
+   }
+}
+
+
+void MainWindow::on_checkLinkButton_clicked()
+{
+    sendCommand("PING");
 }
 

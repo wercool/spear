@@ -5,6 +5,7 @@
 #include <QMessageBox>
 #include <QSerialPortInfo>
 #include <QtSerialPort/QtSerialPort>
+#include <QCloseEvent>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -27,6 +28,12 @@ private slots:
 
     void on_refreshPortListpushButton_clicked();
 
+    void on_checkLinkButton_clicked();
+
+    void closeEvent(QCloseEvent *event);
+
+    void serialReadData();
+
 private:
     Ui::MainWindow *ui;
     QSerialPort *serialPort;
@@ -34,5 +41,12 @@ private:
 
     QString selectedPort;
     int selectedPortBaudRate;
+    bool portOpened = false;
+    QByteArray charBuffer;
+    QString strBuffer;
+
+    void sendCommand(QString command);
+
+    qint64 startTime = QDateTime::currentMSecsSinceEpoch();
 };
 #endif // MAINWINDOW_H
