@@ -66,3 +66,13 @@ void MainWindow::on_clearLogOutputPushButton_clicked()
     ui->logOutput->clear();
 }
 
+
+void MainWindow::on_refreshPortListpushButton_clicked()
+{
+    ui->serialPortsComboBox->clear();
+    foreach (const QSerialPortInfo &serialPortInfo, QSerialPortInfo::availablePorts())
+    {
+        ui->serialPortsComboBox->addItem(serialPortInfo.portName());
+    }
+}
+

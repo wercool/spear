@@ -25,6 +25,8 @@ private slots:
 
     void on_clearLogOutputPushButton_clicked();
 
+    void on_refreshPortListpushButton_clicked();
+
 private:
     Ui::MainWindow *ui;
     QSerialPort *serialPort;
