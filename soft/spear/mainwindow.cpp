@@ -26,6 +26,46 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
     }
 
     connect(serialPort, &QSerialPort::readyRead, this, &MainWindow::serialReadData);
+
+    chart->layout()->setContentsMargins(0, 0, 0, 0);
+    chart->setBackgroundRoundness(0);
+    ui->graphVerticalLayout->addWidget(chartView);
+
+    QSizePolicy chartViewSizePolicy;
+    chartViewSizePolicy.setHorizontalPolicy(QSizePolicy::Expanding);
+    chartViewSizePolicy.setVerticalPolicy(QSizePolicy::Expanding);
+    chartView->setSizePolicy(chartViewSizePolicy);
+
+//    QLineSeries *magnetomerXSeries = new QLineSeries;
+//    QVector<QPointF> magnetomerXReadings;
+//    QValueAxis *magnetomerXValueAxis = new QValueAxis;
+
+    timeAxis->setLabelFormat("%d");
+    timeAxis->setTickCount(10);
+    chart->addAxis(timeAxis, Qt::AlignBottom);
+    chart->addAxis(barometerValueAxis, Qt::AlignLeft);
+    chart->addAxis(magnetomerXValueAxis, Qt::AlignLeft);
+
+    chart->addSeries(barometerSeries);
+    chart->addSeries(magnetomerXSeries);
+
+//    barometerValueAxis->setTitleText("barometer");
+    barometerValueAxis->setTickCount(3);
+    barometerValueAxis->setLabelsAngle(-90);
+    barometerValueAxis->setLinePenColor(barometerSeries->pen().color());
+    barometerSeries->attachAxis(timeAxis);
+    barometerSeries->attachAxis(barometerValueAxis);
+    barometerSeries->setName("barometer");
+    barometerSeries->setUseOpenGL(true);
+
+//    magnetomerXValueAxis->setTitleText("magnetometer Z");
+    magnetomerXValueAxis->setTickCount(3);
+    magnetomerXValueAxis->setLabelsAngle(-90);
+    magnetomerXValueAxis->setLinePenColor(magnetomerXSeries->pen().color());
+    magnetomerXSeries->attachAxis(timeAxis);
+    magnetomerXSeries->attachAxis(magnetomerXValueAxis);
+    magnetomerXSeries->setName("magnetometer Z");
+    magnetomerXSeries->setUseOpenGL(true);
 }
 
 MainWindow::~MainWindow()
@@ -105,6 +145,22 @@ void MainWindow::sendCommand(QString command) {
     }
 
     ui->logOutput->append(logMessage);
+
+    barometerReadings.append(QPointF(QDateTime::currentMSecsSinceEpoch() - startTime, qrand()));
+
+    double maxReadingsTime = barometerReadings.last().x();
+
+    timeAxis->setRange(0, maxReadingsTime);
+
+    double maxBarometerReading = 0;
+    foreach (QPointF p, barometerReadings) {
+        if (p.y() > maxBarometerReading) {
+            maxBarometerReading = p.y();
+        }
+    }
+    barometerValueAxis->setRange(0, maxBarometerReading);
+
+    barometerSeries->replace(barometerReadings);
 }
 
 void MainWindow::serialReadData()

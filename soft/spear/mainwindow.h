@@ -6,9 +6,11 @@
 #include <QSerialPortInfo>
 #include <QtSerialPort/QtSerialPort>
 #include <QCloseEvent>
+#include <QtCharts>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
+using namespace QtCharts;
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
@@ -48,5 +50,17 @@ private:
     void sendCommand(QString command);
 
     qint64 startTime = QDateTime::currentMSecsSinceEpoch();
+
+    QChart *chart = new QChart;
+    QChartView *chartView = new QChartView(chart);
+    QValueAxis *timeAxis = new QValueAxis;
+
+    QLineSeries *barometerSeries = new QLineSeries;
+    QVector<QPointF> barometerReadings;
+    QValueAxis *barometerValueAxis = new QValueAxis;
+
+    QLineSeries *magnetomerXSeries = new QLineSeries;
+    QVector<QPointF> magnetomerXReadings;
+    QValueAxis *magnetomerXValueAxis = new QValueAxis;
 };
 #endif // MAINWINDOW_H
