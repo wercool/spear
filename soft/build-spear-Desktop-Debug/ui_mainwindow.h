@@ -13,12 +13,10 @@
 #include <QtGui/QIcon>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QComboBox>
-#include <QtWidgets/QGridLayout>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QPushButton>
-#include <QtWidgets/QScrollArea>
 #include <QtWidgets/QSpacerItem>
 #include <QtWidgets/QSplitter>
 #include <QtWidgets/QTextEdit>
@@ -44,14 +42,13 @@ public:
     QPushButton *clearLogOutputPushButton;
     QSplitter *splitter;
     QTextEdit *logOutput;
-    QScrollArea *scrollArea;
-    QWidget *scrollAreaWidgetContents;
-    QVBoxLayout *verticalLayout_2;
-    QGridLayout *gridLayout;
-    QVBoxLayout *verticalLayout_3;
+    QWidget *horizontalLayoutWidget;
+    QHBoxLayout *contolsHorizontalLayout;
+    QVBoxLayout *buttonsVerticalLayout;
     QPushButton *checkLinkButton;
-    QSpacerItem *horizontalSpacer_2;
     QSpacerItem *verticalSpacer;
+    QVBoxLayout *graphVerticalLayout;
+    QSpacerItem *horizontalSpacer_2;
 
     void setupUi(QMainWindow *MainWindow)
     {
@@ -149,57 +146,46 @@ public:
         logOutput->setStyleSheet(QString::fromUtf8(""));
         logOutput->setReadOnly(true);
         splitter->addWidget(logOutput);
-        scrollArea = new QScrollArea(splitter);
-        scrollArea->setObjectName(QString::fromUtf8("scrollArea"));
-        sizePolicy.setHeightForWidth(scrollArea->sizePolicy().hasHeightForWidth());
-        scrollArea->setSizePolicy(sizePolicy);
-        scrollArea->setFrameShape(QFrame::NoFrame);
-        scrollArea->setFrameShadow(QFrame::Plain);
-        scrollArea->setLineWidth(0);
-        scrollArea->setWidgetResizable(true);
-        scrollAreaWidgetContents = new QWidget();
-        scrollAreaWidgetContents->setObjectName(QString::fromUtf8("scrollAreaWidgetContents"));
-        scrollAreaWidgetContents->setEnabled(true);
-        scrollAreaWidgetContents->setGeometry(QRect(0, 0, 852, 343));
-        sizePolicy.setHeightForWidth(scrollAreaWidgetContents->sizePolicy().hasHeightForWidth());
-        scrollAreaWidgetContents->setSizePolicy(sizePolicy);
-        scrollAreaWidgetContents->setMinimumSize(QSize(0, 0));
-        verticalLayout_2 = new QVBoxLayout(scrollAreaWidgetContents);
-        verticalLayout_2->setObjectName(QString::fromUtf8("verticalLayout_2"));
-        verticalLayout_2->setSizeConstraint(QLayout::SetMaximumSize);
-        verticalLayout_2->setContentsMargins(0, 0, 0, 0);
-        gridLayout = new QGridLayout();
-        gridLayout->setObjectName(QString::fromUtf8("gridLayout"));
-        verticalLayout_3 = new QVBoxLayout();
-        verticalLayout_3->setObjectName(QString::fromUtf8("verticalLayout_3"));
-        verticalLayout_3->setContentsMargins(0, 0, -1, -1);
-        checkLinkButton = new QPushButton(scrollAreaWidgetContents);
+        horizontalLayoutWidget = new QWidget(splitter);
+        horizontalLayoutWidget->setObjectName(QString::fromUtf8("horizontalLayoutWidget"));
+        contolsHorizontalLayout = new QHBoxLayout(horizontalLayoutWidget);
+        contolsHorizontalLayout->setObjectName(QString::fromUtf8("contolsHorizontalLayout"));
+        contolsHorizontalLayout->setSizeConstraint(QLayout::SetDefaultConstraint);
+        contolsHorizontalLayout->setContentsMargins(0, 0, 0, 0);
+        buttonsVerticalLayout = new QVBoxLayout();
+        buttonsVerticalLayout->setObjectName(QString::fromUtf8("buttonsVerticalLayout"));
+        buttonsVerticalLayout->setSizeConstraint(QLayout::SetDefaultConstraint);
+        buttonsVerticalLayout->setContentsMargins(0, -1, -1, -1);
+        checkLinkButton = new QPushButton(horizontalLayoutWidget);
         checkLinkButton->setObjectName(QString::fromUtf8("checkLinkButton"));
         checkLinkButton->setMinimumSize(QSize(0, 0));
+        checkLinkButton->setMaximumSize(QSize(16777215, 16777215));
+        checkLinkButton->setBaseSize(QSize(0, 0));
         checkLinkButton->setStyleSheet(QString::fromUtf8("font: 10pt \"Ubuntu\";"));
         checkLinkButton->setCheckable(false);
         checkLinkButton->setAutoRepeat(true);
         checkLinkButton->setAutoRepeatDelay(250);
         checkLinkButton->setFlat(false);
 
-        verticalLayout_3->addWidget(checkLinkButton);
-
-
-        gridLayout->addLayout(verticalLayout_3, 0, 0, 1, 1);
-
-        horizontalSpacer_2 = new QSpacerItem(40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum);
-
-        gridLayout->addItem(horizontalSpacer_2, 1, 2, 1, 1);
+        buttonsVerticalLayout->addWidget(checkLinkButton);
 
         verticalSpacer = new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);
 
-        gridLayout->addItem(verticalSpacer, 1, 0, 1, 1);
+        buttonsVerticalLayout->addItem(verticalSpacer);
 
 
-        verticalLayout_2->addLayout(gridLayout);
+        contolsHorizontalLayout->addLayout(buttonsVerticalLayout);
 
-        scrollArea->setWidget(scrollAreaWidgetContents);
-        splitter->addWidget(scrollArea);
+        graphVerticalLayout = new QVBoxLayout();
+        graphVerticalLayout->setObjectName(QString::fromUtf8("graphVerticalLayout"));
+        horizontalSpacer_2 = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum);
+
+        graphVerticalLayout->addItem(horizontalSpacer_2);
+
+
+        contolsHorizontalLayout->addLayout(graphVerticalLayout);
+
+        splitter->addWidget(horizontalLayoutWidget);
 
         verticalLayout->addWidget(splitter);
 
@@ -222,7 +208,7 @@ public:
         openPortButton->setText(QApplication::translate("MainWindow", "Open", nullptr));
         closePortButton->setText(QApplication::translate("MainWindow", "Close", nullptr));
         clearLogOutputPushButton->setText(QApplication::translate("MainWindow", "Clear", nullptr));
-        checkLinkButton->setText(QApplication::translate("MainWindow", "\342\207\204", nullptr));
+        checkLinkButton->setText(QApplication::translate("MainWindow", "\342\207\204 PING", nullptr));
     } // retranslateUi
 
 };
