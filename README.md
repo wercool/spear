@@ -1,3 +1,7 @@
 # spear
 
+expertpc
 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
+
+vaio
+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
