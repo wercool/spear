@@ -26,6 +26,9 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
     }
 
     connect(serialPort, &QSerialPort::readyRead, this, &MainWindow::serialReadData);
+    connect(checkLinkTimer, SIGNAL(timeout()), this, SLOT(checkLinkTimeout()));
+
+    checkLinkTimer->setInterval(25);
 
     chart->layout()->setContentsMargins(0, 0, 0, 0);
     chart->setBackgroundRoundness(0);
@@ -91,7 +94,6 @@ void MainWindow::on_openPortButton_clicked()
 
     if (serialPort->open(QIODevice::ReadWrite)){
         portOpened = true;
-        serialPort->setRequestToSend(false);
         ui->logOutput->append("Serial port <b>" + selectedPort + "</b> opened successfully");
     } else {
         msgBox.setText(serialPort->errorString());
@@ -130,12 +132,10 @@ void MainWindow::on_refreshPortListpushButton_clicked()
 void MainWindow::sendCommand(QString command) {
     QString logMessage;
     if (portOpened) {
-        serialPort->setRequestToSend(true);
-        QByteArray buffer = "!{" + QByteArray::fromStdString(command.toStdString()) + "}!\n";
+        QByteArray buffer = "<c>" + QByteArray::fromStdString(command.toStdString()) + "</c>";
         serialPort->write(buffer);
-        serialPort->setRequestToSend(false);
 
-        qDebug() << "← " + QString(buffer);
+//        qDebug() << "← " + QString(buffer);
 
         logMessage = QString("<span style='color: #aaaaaa;'>%1: ← %2</span>")
                     .arg(QDateTime::currentMSecsSinceEpoch() - startTime)
@@ -170,22 +170,36 @@ void MainWindow::serialReadData()
 
    strBuffer = QString(charBuffer);
 
-   if (strBuffer.startsWith("!{") && strBuffer.endsWith("}!\n"))
-   {
-       qDebug() << "→ " + strBuffer;
+   QRegularExpressionMatchIterator messageMatchIterator = messageRegExp.globalMatch(strBuffer);
+   while (messageMatchIterator.hasNext()) {
+       QRegularExpressionMatch messageMatch = messageMatchIterator.next();
+       if (messageMatch.hasMatch()) {
+           QString rawMessage = messageMatch.captured(0);
+           QString message = rawMessage.mid(3, rawMessage.length() - 7);
+           QStringList messageParts = message.split(',');
 
-       strBuffer = strBuffer.trimmed();
+           int messageTime = messageParts[0].toInt();
 
-       QString logMessage = QString("<span style='color: #aaaaaa;'>%1:</span> → %2")
-                           .arg(QDateTime::currentMSecsSinceEpoch() - startTime)
-                           .arg(QString(strBuffer));
-       ui->logOutput->append(logMessage);
+           /*
+            * Process message
+            */
+           if (messageTime > lastMessageTime) {
+               lastMessageTime = messageTime;
+               /*
+                * Message log output, after processing
+                */
+              QString logMessage = QString("<span style='color: #aaaaaa;'>%1:</span> → %2")
+                                  .arg(QDateTime::currentMSecsSinceEpoch() - startTime)
+                                  .arg(QString(message));
 
-       charBuffer = "";
-       strBuffer = "";
+              ui->logOutput->append(logMessage);
+           }
+       }
    }
 
-   if (strBuffer.length() > 1024) {
+
+   if (charBuffer.length() > 1024) {
+       charBuffer = "";
        strBuffer = "";
    }
 }
@@ -193,6 +207,15 @@ void MainWindow::serialReadData()
 
 void MainWindow::on_checkLinkButton_clicked()
 {
-    sendCommand("PING");
+    if (ui->checkLinkButton->isChecked()) {
+        checkLinkTimer->start();
+    } else {
+        checkLinkTimer->stop();
+    }
+}
+
+void MainWindow::checkLinkTimeout() {
+    QString pingMessage = QString("%1,PING").arg(QDateTime::currentMSecsSinceEpoch() - startTime);
+    sendCommand(pingMessage);
 }
 

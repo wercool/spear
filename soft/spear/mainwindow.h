@@ -36,6 +36,8 @@ private slots:
 
     void serialReadData();
 
+    void checkLinkTimeout();
+
 private:
     Ui::MainWindow *ui;
     QSerialPort *serialPort;
@@ -48,6 +50,12 @@ private:
     QString strBuffer;
 
     void sendCommand(QString command);
+
+    /**
+     * @brief messageRegExp
+     * Spear send telemetry messages in <s>.*</s> format
+     */
+    QRegularExpression messageRegExp = QRegularExpression("<c>(.*?)</c>", QRegularExpression::MultilineOption);
 
     qint64 startTime = QDateTime::currentMSecsSinceEpoch();
 
@@ -62,5 +70,15 @@ private:
     QLineSeries *magnetomerXSeries = new QLineSeries;
     QVector<QPointF> magnetomerXReadings;
     QValueAxis *magnetomerXValueAxis = new QValueAxis;
+
+    /*
+     * Commands
+    */
+    QTimer* checkLinkTimer = new QTimer(this);
+
+    /*
+     * Messages
+     */
+    int lastMessageTime = -1;
 };
 #endif // MAINWINDOW_H
