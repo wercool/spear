@@ -50,6 +50,10 @@ unsigned long launchTime;
 float fAltitude = 0;
 float maxfAltitude = -1;
 unsigned long maxfAltitudeTime = 0;
+unsigned long parachute1Time = 0;
+unsigned long parachute2Time = 0;
+unsigned long landingBuzzerTime = 0;
+boolean buzzer = false;
 
 void setup() {
   pinMode(RADIO_TRANSMIT_PIN, OUTPUT);
@@ -162,14 +166,10 @@ void loop() {
       curState = LAUNCH;
     }
   } else if (curState == LAUNCH) {
-    sendMessage(0, 100, 10, "LAUNCH!");   
-//    RXSoftSerial.end();
-//    tone(BUZZER_PIN, 4000);
+    sendMessage(0, 100, 10, "LAUNCH!");
     digitalWrite(START_PIN, true);
     curState = FLIGHT;
     launchTime = currentMillis;
-//    noTone(BUZZER_PIN);
-//    RXSoftSerial.begin(9600);
     digitalWrite(RADIO_TRANSMIT_PIN, true);
   }
 
@@ -177,15 +177,20 @@ void loop() {
   /*
    * FLIGHT
    */
-  if (curState == FLIGHT || curState == PARACHUTE1 || curState == PARACHUTE2) {
+  if (curState == FLIGHT || curState == PARACHUTE1 || curState == PARACHUTE2 || curState == LANDING) {
 
     if (curState == FLIGHT) {
       if (currentMillis - launchTime > 4000) {
         digitalWrite(START_PIN, false);
       }
     }
-    
+
+    /*
+     * Barometer and MEMS readings
+     */
     fAltitude = bmp.readAltitude() - launchAltitude;
+    HMC5883L_Simple::MagnetometerSample magSample = compass.GetMagnetometerSample();
+    accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
     if (curState == FLIGHT) {
       if (fAltitude > maxfAltitude) {
@@ -195,16 +200,57 @@ void loop() {
 
       if (maxfAltitude > 2.0 && fAltitude < maxfAltitude - 2.0 && currentMillis - maxfAltitudeTime > 2000) {
         curState = PARACHUTE1;
+        parachute1Time = currentMillis;
       }
     }
 
     if (curState == PARACHUTE1) {
       digitalWrite(PARACHUTE1_PIN, true);
-//      delay(4000);
-//      digitalWrite(PARACHUTE1_PIN, false);
+      if (currentMillis - parachute1Time > 3000) {
+        digitalWrite(PARACHUTE1_PIN, false);
+        curState = PARACHUTE2;
+        parachute2Time = currentMillis;
+      }
     }
 
-    sprintf(messageBuffer, "<m>%lu,F,%s%d.%02d</m>", currentMillis - launchTime, fAltitude > 0 ? "" : "-", abs((int)fAltitude), abs((int)(fAltitude * 100) % 100));          
+    if (curState == PARACHUTE2) {
+      digitalWrite(PARACHUTE2_PIN, true);
+      if (currentMillis - parachute2Time > 2000) {
+        digitalWrite(PARACHUTE2_PIN, false);
+        curState = LANDING;
+        landingBuzzerTime = currentMillis;
+      }
+    }
+
+    if (curState == LANDING) {
+      if (!buzzer) {
+        if (currentMillis - landingBuzzerTime > 1000) {
+          tone(BUZZER_PIN, 4000);
+          buzzer = true;
+          landingBuzzerTime = currentMillis;
+        }
+      } else {
+        if (currentMillis - landingBuzzerTime > 2000) {
+          noTone(BUZZER_PIN);
+          buzzer = false;
+          landingBuzzerTime = currentMillis;
+        }
+      }
+
+      if (fAltitude < 5.0) {
+        RXSoftSerial.end();
+      }
+    }
+
+    sprintf(messageBuffer, "<m>%lu,F,%s%d.%02d,%d,%d,%d,%d,%d,%d</m>", 
+                            currentMillis - launchTime, fAltitude > 0 ? "" : "-", abs((int)fAltitude), abs((int)(fAltitude * 100) % 100),
+                            magSample.X,
+                            magSample.Y,
+                            magSample.Z,
+                            ax,
+                            ay,
+                            az
+          );          
     Serial.print(messageBuffer);
     memset(messageBuffer, 0, sizeof(messageBuffer));
   }

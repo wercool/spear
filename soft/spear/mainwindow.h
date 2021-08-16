@@ -76,6 +76,25 @@ private:
     QVector<QPointF> magnetomerXReadings;
     QValueAxis *magnetomerXValueAxis = new QValueAxis;
 
+    QLineSeries *magnetomerYSeries = new QLineSeries;
+    QVector<QPointF> magnetomerYReadings;
+    QValueAxis *magnetomerYValueAxis = new QValueAxis;
+
+    QLineSeries *magnetomerZSeries = new QLineSeries;
+    QVector<QPointF> magnetomerZReadings;
+    QValueAxis *magnetomerZValueAxis = new QValueAxis;
+
+    QLineSeries *accXSeries = new QLineSeries;
+    QVector<QPointF> accXReadings;
+    QValueAxis *accXValueAxis = new QValueAxis;
+
+    QLineSeries *accYSeries = new QLineSeries;
+    QVector<QPointF> accYReadings;
+    QValueAxis *accYValueAxis = new QValueAxis;
+
+    QLineSeries *accZSeries = new QLineSeries;
+    QVector<QPointF> accZReadings;
+    QValueAxis *accZValueAxis = new QValueAxis;
     /*
      * Commands
     */
