@@ -99,7 +99,6 @@ void MainWindow::on_openPortButton_clicked()
         msgBox.exec();
     }
 
-    lastMessageTime = 0;
 
 }
 
@@ -131,7 +130,6 @@ void MainWindow::on_refreshPortListpushButton_clicked()
 }
 
 void MainWindow::sendCommand(QString command) {
-    lastMessageTime = 0;
     QString logMessage;
     if (portOpened) {
         QByteArray buffer = "<c>" + QByteArray::fromStdString(command.toStdString()) + "</c>";
@@ -143,22 +141,6 @@ void MainWindow::sendCommand(QString command) {
     }
 
     ui->logOutput->append(logMessage);
-
-    barometerReadings.append(QPointF(QDateTime::currentMSecsSinceEpoch() - startTime, qrand()));
-
-    double maxReadingsTime = barometerReadings.last().x();
-
-    timeAxis->setRange(0, maxReadingsTime);
-
-    double maxBarometerReading = 0;
-    foreach (QPointF p, barometerReadings) {
-        if (p.y() > maxBarometerReading) {
-            maxBarometerReading = p.y();
-        }
-    }
-    barometerValueAxis->setRange(0, maxBarometerReading);
-
-    barometerSeries->replace(barometerReadings);
 }
 
 void MainWindow::serialReadData()
@@ -167,7 +149,7 @@ void MainWindow::serialReadData()
     charBuffer.append(data);
 
     strBuffer = QString(charBuffer);
-    qDebug() << strBuffer;
+//    qDebug() << strBuffer;
 
     QRegularExpressionMatchIterator messageMatchIterator = messageRegExp.globalMatch(strBuffer);
     while (messageMatchIterator.hasNext()) {
@@ -178,24 +160,48 @@ void MainWindow::serialReadData()
            QStringList messageParts = message.split(',');
 
            unsigned long messageTime = messageParts[0].toULong();
+           QString isInFligh;
+           if (messageParts.length() > 1) {
+               isInFligh = messageParts[1];
+           }
 
            /*
             * Process message
             */
-           if (messageTime > lastMessageTime) {
-                lastMessageTime = messageTime;
-                /*
-                * Message log output, after processing
-                */
-                QString logMessage = QString("→ %2").arg(QString(message));
+           if (isInFligh == "F") {
+               if (messageTime > lastMessageTime) {
+                   lastMessageTime = messageTime;
+                   float barometerReading = messageParts[2].toFloat();
 
-                ui->logOutput->append(logMessage);
+                   barometerReadings.append(QPointF(messageTime, barometerReading));
+
+                   double maxReadingsTime = barometerReadings.last().x();
+
+                   timeAxis->setRange(0, maxReadingsTime);
+
+                   double maxBarometerReading = 0;
+                   foreach (QPointF p, barometerReadings) {
+                       if (p.y() > maxBarometerReading) {
+                           maxBarometerReading = p.y();
+                       }
+                   }
+                   barometerValueAxis->setRange(0, maxBarometerReading);
+
+                   barometerSeries->replace(barometerReadings);
+               }
            }
+
+           /*
+           * Message log output, after processing
+           */
+           QString logMessage = QString("→ %2").arg(QString(message));
+
+           ui->logOutput->append(logMessage);
        }
     }
 
 
-   if (charBuffer.length() > 1024) {
+   if (charBuffer.length() > 64) {
        charBuffer = "";
        strBuffer = "";
    }

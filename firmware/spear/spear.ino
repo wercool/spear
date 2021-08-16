@@ -1,18 +1,29 @@
 #include "ReceiveOnlySoftwareSerial.h"
 #include "I2Cdev.h"
+#include "MPU6050.h"
+#include <Adafruit_BMP085.h>
+#include <HMC5883L_Simple.h>
 
+#define LED_PIN 13
 #define RX_SOFT_SERIAL_PIN 16
 #define RADIO_TRANSMIT_PIN 2
 #define BUZZER_PIN 9
 #define START_PIN 4
-#define FIRST_STAGE_PIN 7
-#define SECOND_STAGE_PIN 8
+#define PARACHUTE1_PIN 7
+#define PARACHUTE2_PIN 8
 
 ReceiveOnlySoftwareSerial RXSoftSerial(RX_SOFT_SERIAL_PIN);
 
-enum states { READY, START, LAUNCH, FLIGHT };
+enum states { READY, START, CALIBRATION, LAUNCH, FLIGHT, PARACHUTE1, PARACHUTE2, LANDING };
 
 states curState = READY;
+
+MPU6050 accelgyro;
+Adafruit_BMP085 bmp;
+HMC5883L_Simple compass;
+
+int16_t ax, ay, az;
+int16_t gx, gy, gz;
 
 /*
  * Incoming commands
@@ -30,16 +41,26 @@ unsigned long currentMillis;
 unsigned long startTime = 10;
 unsigned long prevStepTime = 0;
 
+float calibrationReadings = 0;
+float calibrationAltitude = 0;
+float launchAltitude = 0;
+
+unsigned long launchTime;
+
+float fAltitude = 0;
+float maxfAltitude = -1;
+unsigned long maxfAltitudeTime = 0;
+
 void setup() {
   pinMode(RADIO_TRANSMIT_PIN, OUTPUT);
   digitalWrite(RADIO_TRANSMIT_PIN, false);
 
   pinMode(START_PIN, OUTPUT);
-  pinMode(FIRST_STAGE_PIN, OUTPUT);
-  pinMode(SECOND_STAGE_PIN, OUTPUT);  
+  pinMode(PARACHUTE1_PIN, OUTPUT);
+  pinMode(PARACHUTE2_PIN, OUTPUT);  
   digitalWrite(START_PIN, false);
-  digitalWrite(FIRST_STAGE_PIN, false);
-  digitalWrite(SECOND_STAGE_PIN, false);
+  digitalWrite(PARACHUTE1_PIN, false);
+  digitalWrite(PARACHUTE2_PIN, false);
 
   pinMode(BUZZER_PIN, OUTPUT);
   digitalWrite(BUZZER_PIN, false);
@@ -48,6 +69,30 @@ void setup() {
 
   Serial.begin(9600);
   RXSoftSerial.begin(9600);
+
+  // initialize devices
+  Serial.println("Initializing I2C devices...");
+
+  // initialize bmp085
+  if (!bmp.begin()) {
+    Serial.println("Could not find a valid BMP085 sensor, check wiring!");
+    tone(BUZZER_PIN, 1000);
+    while (1) {}
+  }
+
+  // initialize mpu6050
+  accelgyro.initialize();
+  Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+  accelgyro.setI2CBypassEnabled(true); // set bypass mode for gateway to hmc5883L
+
+  // initialize hmc5883l
+  compass.SetDeclination(23, 35, 'E');
+  compass.SetSamplingMode(COMPASS_SINGLE);
+  compass.SetScale(COMPASS_SCALE_130);
+  compass.SetOrientation(COMPASS_HORIZONTAL_X_NORTH);
+
+  // configure Arduino LED for checking activity
+  pinMode(LED_PIN, OUTPUT);
 }
 
 void loop() {
@@ -101,16 +146,67 @@ void loop() {
     if (curState == START) {
       startProcedure();
     }
+  } else if (curState == CALIBRATION) {
+    if (currentMillis - prevStepTime < 2000) {
+      float altitude = bmp.readAltitude();
+      calibrationAltitude += altitude;
+      calibrationReadings++;
+
+      launchAltitude = (calibrationAltitude / calibrationReadings);
+      float calibrationAltitude = altitude - launchAltitude;
+
+      sprintf(messageBuffer, "<m>%lu,CALIBRATION,%s%d.%02d</m>", currentMillis, calibrationAltitude > 0 ? "" : "-", abs((int)calibrationAltitude), abs((int)(calibrationAltitude * 100) % 100));          
+      Serial.print(messageBuffer);
+      memset(messageBuffer, 0, sizeof(messageBuffer));
+    } else {
+      curState = LAUNCH;
+    }
   } else if (curState == LAUNCH) {
-    RXSoftSerial.end();
-    curState = FLIGHT;
-    tone(BUZZER_PIN, 4000);
+    sendMessage(0, 100, 10, "LAUNCH!");   
+//    RXSoftSerial.end();
+//    tone(BUZZER_PIN, 4000);
     digitalWrite(START_PIN, true);
-    sendMessage(0, 200, 10, "LAUNCH!");
-    digitalWrite(START_PIN, false);
-    noTone(BUZZER_PIN);
-  } else if (curState == FLIGHT) {
+    curState = FLIGHT;
+    launchTime = currentMillis;
+//    noTone(BUZZER_PIN);
+//    RXSoftSerial.begin(9600);
+    digitalWrite(RADIO_TRANSMIT_PIN, true);
+  }
+
+
+  /*
+   * FLIGHT
+   */
+  if (curState == FLIGHT || curState == PARACHUTE1 || curState == PARACHUTE2) {
+
+    if (curState == FLIGHT) {
+      if (currentMillis - launchTime > 4000) {
+        digitalWrite(START_PIN, false);
+      }
+    }
     
+    fAltitude = bmp.readAltitude() - launchAltitude;
+
+    if (curState == FLIGHT) {
+      if (fAltitude > maxfAltitude) {
+        maxfAltitude = fAltitude;
+        maxfAltitudeTime = currentMillis;
+      }
+
+      if (maxfAltitude > 2.0 && fAltitude < maxfAltitude - 2.0 && currentMillis - maxfAltitudeTime > 2000) {
+        curState = PARACHUTE1;
+      }
+    }
+
+    if (curState == PARACHUTE1) {
+      digitalWrite(PARACHUTE1_PIN, true);
+//      delay(4000);
+//      digitalWrite(PARACHUTE1_PIN, false);
+    }
+
+    sprintf(messageBuffer, "<m>%lu,F,%s%d.%02d</m>", currentMillis - launchTime, fAltitude > 0 ? "" : "-", abs((int)fAltitude), abs((int)(fAltitude * 100) % 100));          
+    Serial.print(messageBuffer);
+    memset(messageBuffer, 0, sizeof(messageBuffer));
   }
 }
 
@@ -124,7 +220,7 @@ void sendMessage(int preSendDelay, int repeat, int repeatDelay, char *msg) {
   digitalWrite(RADIO_TRANSMIT_PIN, true);
   for (int i = 0; i < repeat; i++) {
     unsigned long messageTime = millis();
-    sprintf(messageBuffer, "<m>%lu,%s</m>\n", messageTime, msg);
+    sprintf(messageBuffer, "<m>%lu,%s</m>", messageTime, msg);
     Serial.print(messageBuffer);
     memset(messageBuffer, 0, sizeof(messageBuffer));
     delay(repeatDelay);
@@ -146,8 +242,14 @@ void startProcedure() {
         sendMessage(0, 25, 10, dynMsgPartBuffer);
         memset(dynMsgPartBuffer, 0, sizeof(dynMsgPartBuffer));
         prevStepTime = curTime;
+        RXSoftSerial.flush();
+        rxSoftSerialStrBuffer = "";
+        startCTagPos = -1;
+        endCTagPos = -1;
       } else {
-        curState = LAUNCH;
+        prevStepTime = curTime;
+        digitalWrite(RADIO_TRANSMIT_PIN, true);
+        curState = CALIBRATION;
       }
     }
 }
