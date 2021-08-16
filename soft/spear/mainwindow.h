@@ -34,14 +34,19 @@ private slots:
 
     void closeEvent(QCloseEvent *event);
 
+    void repeatCommandTimerTimeout();
+
     void serialReadData();
 
-    void checkLinkTimeout();
+    void on_launchButton_clicked();
+
+    void on_stopButton_clicked();
 
 private:
     Ui::MainWindow *ui;
     QSerialPort *serialPort;
     QMessageBox msgBox;
+    QMessageBox startConfirmBox;
 
     QString selectedPort;
     int selectedPortBaudRate;
@@ -53,9 +58,9 @@ private:
 
     /**
      * @brief messageRegExp
-     * Spear send telemetry messages in <s>.*</s> format
+     * Spear send telemetry messages in <m>.*</m> format
      */
-    QRegularExpression messageRegExp = QRegularExpression("<c>(.*?)</c>", QRegularExpression::MultilineOption);
+    QRegularExpression messageRegExp = QRegularExpression("<m>(.*?)</m>", QRegularExpression::MultilineOption);
 
     qint64 startTime = QDateTime::currentMSecsSinceEpoch();
 
@@ -74,11 +79,14 @@ private:
     /*
      * Commands
     */
-    QTimer* checkLinkTimer = new QTimer(this);
+    QTimer* repeatCommandTimer = new QTimer(this);
+    QString repeatCommand = "";
+    int repeatCommandNum = 0;
+    int repeatCommandCnt = 0;
 
     /*
      * Messages
      */
-    int lastMessageTime = -1;
+    unsigned long lastMessageTime = 0;
 };
 #endif // MAINWINDOW_H

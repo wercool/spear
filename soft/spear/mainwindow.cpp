@@ -6,6 +6,7 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
     ui->setupUi(this);
 
     msgBox.setWindowTitle("Spear Control");
+    startConfirmBox.setWindowTitle("Confirm LAUNCH");
 
     ui->serialPortBaudRateComboBox->addItems({
                                                  "2400",
@@ -26,9 +27,7 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
     }
 
     connect(serialPort, &QSerialPort::readyRead, this, &MainWindow::serialReadData);
-    connect(checkLinkTimer, SIGNAL(timeout()), this, SLOT(checkLinkTimeout()));
-
-    checkLinkTimer->setInterval(25);
+    connect(repeatCommandTimer, SIGNAL(timeout()), this, SLOT(repeatCommandTimerTimeout()));
 
     chart->layout()->setContentsMargins(0, 0, 0, 0);
     chart->setBackgroundRoundness(0);
@@ -100,6 +99,8 @@ void MainWindow::on_openPortButton_clicked()
         msgBox.exec();
     }
 
+    lastMessageTime = 0;
+
 }
 
 
@@ -130,16 +131,13 @@ void MainWindow::on_refreshPortListpushButton_clicked()
 }
 
 void MainWindow::sendCommand(QString command) {
+    lastMessageTime = 0;
     QString logMessage;
     if (portOpened) {
         QByteArray buffer = "<c>" + QByteArray::fromStdString(command.toStdString()) + "</c>";
         serialPort->write(buffer);
 
-//        qDebug() << "← " + QString(buffer);
-
-        logMessage = QString("<span style='color: #aaaaaa;'>%1: ← %2</span>")
-                    .arg(QDateTime::currentMSecsSinceEpoch() - startTime)
-                    .arg(QString(buffer));
+        logMessage = QString("<span style='color: #aaaaaa;'>← %2</span>").arg(QString(buffer));
     } else {
         logMessage = "<span style='color: red;'>Port is not opened</span>";
     }
@@ -165,37 +163,36 @@ void MainWindow::sendCommand(QString command) {
 
 void MainWindow::serialReadData()
 {
-   QByteArray data = serialPort->readAll();
-   charBuffer.append(data);
+    QByteArray data = serialPort->readAll();
+    charBuffer.append(data);
 
-   strBuffer = QString(charBuffer);
+    strBuffer = QString(charBuffer);
+    qDebug() << strBuffer;
 
-   QRegularExpressionMatchIterator messageMatchIterator = messageRegExp.globalMatch(strBuffer);
-   while (messageMatchIterator.hasNext()) {
+    QRegularExpressionMatchIterator messageMatchIterator = messageRegExp.globalMatch(strBuffer);
+    while (messageMatchIterator.hasNext()) {
        QRegularExpressionMatch messageMatch = messageMatchIterator.next();
        if (messageMatch.hasMatch()) {
            QString rawMessage = messageMatch.captured(0);
            QString message = rawMessage.mid(3, rawMessage.length() - 7);
            QStringList messageParts = message.split(',');
 
-           int messageTime = messageParts[0].toInt();
+           unsigned long messageTime = messageParts[0].toULong();
 
            /*
             * Process message
             */
            if (messageTime > lastMessageTime) {
-               lastMessageTime = messageTime;
-               /*
+                lastMessageTime = messageTime;
+                /*
                 * Message log output, after processing
                 */
-              QString logMessage = QString("<span style='color: #aaaaaa;'>%1:</span> → %2")
-                                  .arg(QDateTime::currentMSecsSinceEpoch() - startTime)
-                                  .arg(QString(message));
+                QString logMessage = QString("→ %2").arg(QString(message));
 
-              ui->logOutput->append(logMessage);
+                ui->logOutput->append(logMessage);
            }
        }
-   }
+    }
 
 
    if (charBuffer.length() > 1024) {
@@ -204,18 +201,49 @@ void MainWindow::serialReadData()
    }
 }
 
-
-void MainWindow::on_checkLinkButton_clicked()
-{
-    if (ui->checkLinkButton->isChecked()) {
-        checkLinkTimer->start();
-    } else {
-        checkLinkTimer->stop();
+void MainWindow::repeatCommandTimerTimeout() {
+    if (repeatCommand.length() > 0 && repeatCommandNum > 0) {
+        if (repeatCommandCnt < repeatCommandNum) {
+            sendCommand(repeatCommand);
+            repeatCommandCnt++;
+        } else {
+            repeatCommandTimer->stop();
+            repeatCommandCnt = 0;
+            repeatCommandNum = 0;
+            repeatCommand = "";
+        }
     }
 }
 
-void MainWindow::checkLinkTimeout() {
-    QString pingMessage = QString("%1,PING").arg(QDateTime::currentMSecsSinceEpoch() - startTime);
+
+void MainWindow::on_checkLinkButton_clicked()
+{
+    QString pingMessage = QString("PING");
     sendCommand(pingMessage);
+}
+
+
+void MainWindow::on_launchButton_clicked()
+{
+    startConfirmBox.setText("Initiate LAUNCH?");
+    startConfirmBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+    startConfirmBox.setDefaultButton(QMessageBox::Cancel);
+    int desicion = startConfirmBox.exec();
+
+    if (desicion == QMessageBox::Ok) {
+        repeatCommand = QString("START");
+        repeatCommandNum = 100;
+        repeatCommandTimer->setInterval(10);
+        repeatCommandTimer->start();
+    }
+}
+
+
+void MainWindow::on_stopButton_clicked()
+{
+    repeatCommand = QString("STOP");
+    repeatCommandNum = 500;
+    repeatCommandTimer->setInterval(25);
+    repeatCommandTimer->start();
 }
 

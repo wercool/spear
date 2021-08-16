@@ -13,11 +13,11 @@ void setup() {
 }
 
 void loop() {
-  delay(5000);
+  delay(1000);
   digitalWrite(START_PIN, true);
-  delay(5000);
+  delay(1000);
   digitalWrite(FIRST_STAGE_PIN, true);
-  delay(5000);
+  delay(1000);
   digitalWrite(SECOND_STAGE_PIN, true);
 
   tone(9, 4000);

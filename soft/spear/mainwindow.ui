@@ -189,7 +189,7 @@
          <enum>QLayout::SetDefaultConstraint</enum>
         </property>
         <item>
-         <layout class="QVBoxLayout" name="buttonsVerticalLayout" stretch="0,0">
+         <layout class="QVBoxLayout" name="buttonsVerticalLayout" stretch="0,0,0,0">
           <property name="sizeConstraint">
            <enum>QLayout::SetDefaultConstraint</enum>
           </property>
@@ -223,19 +223,19 @@
              <string>⇄ PING</string>
             </property>
             <property name="checkable">
-             <bool>true</bool>
+             <bool>false</bool>
             </property>
             <property name="checked">
              <bool>false</bool>
             </property>
             <property name="autoRepeat">
-             <bool>false</bool>
+             <bool>true</bool>
             </property>
             <property name="autoRepeatDelay">
              <number>0</number>
             </property>
             <property name="autoRepeatInterval">
-             <number>0</number>
+             <number>100</number>
             </property>
             <property name="default">
              <bool>false</bool>
@@ -257,6 +257,27 @@
              </size>
             </property>
            </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="launchButton">
+            <property name="text">
+             <string>LAUNCH</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="stopButton">
+            <property name="autoFillBackground">
+             <bool>false</bool>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">background-color: rgb(239, 41, 41);
+color: rgb(255, 255, 255);</string>
+            </property>
+            <property name="text">
+             <string>STOP</string>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>
