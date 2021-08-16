@@ -104,7 +104,7 @@ void loop() {
   } else if (curState == LAUNCH) {
     RXSoftSerial.end();
     curState = FLIGHT;
-    tone(BUZZER_PIN, 3500);
+    tone(BUZZER_PIN, 4000);
     digitalWrite(START_PIN, true);
     sendMessage(0, 200, 10, "LAUNCH!");
     digitalWrite(START_PIN, false);
