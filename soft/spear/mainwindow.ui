@@ -189,7 +189,7 @@
          <enum>QLayout::SetDefaultConstraint</enum>
         </property>
         <item>
-         <layout class="QVBoxLayout" name="buttonsVerticalLayout" stretch="0,0,0,0">
+         <layout class="QVBoxLayout" name="buttonsVerticalLayout" stretch="0,0,0,0,0,0,0,0,0,0,0,0,0,0">
           <property name="sizeConstraint">
            <enum>QLayout::SetDefaultConstraint</enum>
           </property>
@@ -242,6 +242,88 @@
             </property>
             <property name="flat">
              <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="barometerCheckBox">
+            <property name="text">
+             <string>barometer</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="magXCheckBox">
+            <property name="text">
+             <string>magX</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="magYCheckBox">
+            <property name="text">
+             <string>magY</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="magZCheckBox">
+            <property name="text">
+             <string>magZ</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="accXCheckBox">
+            <property name="text">
+             <string>accX</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="accYCheckBox">
+            <property name="text">
+             <string>accY</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="accZCheckBox">
+            <property name="text">
+             <string>accZ</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="gyrXCheckBox">
+            <property name="text">
+             <string>gyrX</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="gyrYCheckBox">
+            <property name="text">
+             <string>gyrY</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="gyrZCheckBox">
+            <property name="text">
+             <string>gyrZ</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
             </property>
            </widget>
           </item>

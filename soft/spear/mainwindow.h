@@ -42,6 +42,26 @@ private slots:
 
     void on_stopButton_clicked();
 
+    void on_magXCheckBox_clicked(bool checked);
+
+    void on_magYCheckBox_clicked(bool checked);
+
+    void on_accXCheckBox_clicked(bool checked);
+
+    void on_accYCheckBox_clicked(bool checked);
+
+    void on_gyrXCheckBox_clicked(bool checked);
+
+    void on_gyrYCheckBox_clicked(bool checked);
+
+    void on_barometerCheckBox_clicked(bool checked);
+
+    void on_magZCheckBox_clicked(bool checked);
+
+    void on_accZCheckBox_clicked(bool checked);
+
+    void on_gyrZCheckBox_clicked(bool checked);
+
 private:
     Ui::MainWindow *ui;
     QSerialPort *serialPort;
@@ -53,6 +73,10 @@ private:
     bool portOpened = false;
     QByteArray charBuffer;
     QString strBuffer;
+
+    QString logFilename;
+    QFile logFile;
+    QTextStream logFileStream;
 
     void sendCommand(QString command);
 
@@ -95,6 +119,19 @@ private:
     QLineSeries *accZSeries = new QLineSeries;
     QVector<QPointF> accZReadings;
     QValueAxis *accZValueAxis = new QValueAxis;
+
+
+    QLineSeries *gyrXSeries = new QLineSeries;
+    QVector<QPointF> gyrXReadings;
+    QValueAxis *gyrXValueAxis = new QValueAxis;
+
+    QLineSeries *gyrYSeries = new QLineSeries;
+    QVector<QPointF> gyrYReadings;
+    QValueAxis *gyrYValueAxis = new QValueAxis;
+
+    QLineSeries *gyrZSeries = new QLineSeries;
+    QVector<QPointF> gyrZReadings;
+    QValueAxis *gyrZValueAxis = new QValueAxis;
     /*
      * Commands
     */

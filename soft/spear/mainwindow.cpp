@@ -52,6 +52,9 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
     chart->addAxis(accXValueAxis, Qt::AlignLeft);
     chart->addAxis(accYValueAxis, Qt::AlignLeft);
     chart->addAxis(accZValueAxis, Qt::AlignLeft);
+    chart->addAxis(gyrXValueAxis, Qt::AlignLeft);
+    chart->addAxis(gyrYValueAxis, Qt::AlignLeft);
+    chart->addAxis(gyrZValueAxis, Qt::AlignLeft);
 
     chart->addSeries(barometerSeries);
     chart->addSeries(magnetomerXSeries);
@@ -60,18 +63,21 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
     chart->addSeries(accXSeries);
     chart->addSeries(accYSeries);
     chart->addSeries(accZSeries);
+    chart->addSeries(gyrXSeries);
+    chart->addSeries(gyrYSeries);
+    chart->addSeries(gyrZSeries);
 
-    QPen barometerSeriesPen = barometerSeries->pen();
-    barometerSeriesPen.setWidth(3);
-    barometerSeriesPen.setBrush(QBrush("red"));
-    barometerSeries->setPen(barometerSeriesPen);
+//    QPen barometerSeriesPen = barometerSeries->pen();
+//    barometerSeriesPen.setWidth(3);
+//    barometerSeriesPen.setBrush(QBrush("red"));
+//    barometerSeries->setPen(barometerSeriesPen);
 //    barometerValueAxis->setTitleText("barometer");
     barometerValueAxis->setTickCount(3);
     barometerValueAxis->setLabelsAngle(-90);
     barometerValueAxis->setLinePenColor(barometerSeries->pen().color());
     barometerSeries->attachAxis(timeAxis);
     barometerSeries->attachAxis(barometerValueAxis);
-    barometerSeries->setName("barometer");
+    barometerSeries->setName("barometer, m");
     barometerSeries->setUseOpenGL(true);
 
     //magnetomerXValueAxis->setTitleText("magnetometer X");
@@ -82,6 +88,10 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
     magnetomerXSeries->attachAxis(magnetomerXValueAxis);
     magnetomerXSeries->setName("magX");
     magnetomerXSeries->setUseOpenGL(true);
+    if (!ui->magXCheckBox->isChecked()) {
+        magnetomerXSeries->hide();
+        magnetomerXValueAxis->hide();
+    }
 
     //magnetomerYValueAxis->setTitleText("magnetometer Y");
     magnetomerYValueAxis->setTickCount(3);
@@ -91,11 +101,15 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
     magnetomerYSeries->attachAxis(magnetomerYValueAxis);
     magnetomerYSeries->setName("magY");
     magnetomerYSeries->setUseOpenGL(true);
+    if (!ui->magYCheckBox->isChecked()) {
+        magnetomerYSeries->hide();
+        magnetomerYValueAxis->hide();
+    }
 
-    QPen magnetomerZSeriesPen = magnetomerZSeries->pen();
-    magnetomerZSeriesPen.setWidth(3);
-    magnetomerZSeriesPen.setBrush(QBrush("blue"));
-    magnetomerZSeries->setPen(magnetomerZSeriesPen);
+//    QPen magnetomerZSeriesPen = magnetomerZSeries->pen();
+//    magnetomerZSeriesPen.setWidth(3);
+//    magnetomerZSeriesPen.setBrush(QBrush("blue"));
+//    magnetomerZSeries->setPen(magnetomerZSeriesPen);
     //magnetomerZValueAxis->setTitleText("magnetometer Z");
     magnetomerZValueAxis->setTickCount(3);
     magnetomerZValueAxis->setLabelsAngle(-90);
@@ -104,6 +118,10 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
     magnetomerZSeries->attachAxis(magnetomerZValueAxis);
     magnetomerZSeries->setName("magZ");
     magnetomerZSeries->setUseOpenGL(true);
+    if (!ui->magZCheckBox->isChecked()) {
+        magnetomerZSeries->hide();
+        magnetomerZValueAxis->hide();
+    }
 
     //accXValueAxis->setTitleText("Accelerometer X");
     accXValueAxis->setTickCount(3);
@@ -111,8 +129,12 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
     accXValueAxis->setLinePenColor(accXSeries->pen().color());
     accXSeries->attachAxis(timeAxis);
     accXSeries->attachAxis(accXValueAxis);
-    accXSeries->setName("accX");
+    accXSeries->setName("accX, g");
     accXSeries->setUseOpenGL(true);
+    if (!ui->accXCheckBox->isChecked()) {
+        accXSeries->hide();
+        accXValueAxis->hide();
+    }
 
     //accYValueAxis->setTitleText("Accelerometer Y");
     accYValueAxis->setTickCount(3);
@@ -120,21 +142,72 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
     accYValueAxis->setLinePenColor(accYSeries->pen().color());
     accYSeries->attachAxis(timeAxis);
     accYSeries->attachAxis(accYValueAxis);
-    accYSeries->setName("accY");
+    accYSeries->setName("accY, g");
     accYSeries->setUseOpenGL(true);
+    if (!ui->accYCheckBox->isChecked()) {
+        accYSeries->hide();
+        accYValueAxis->hide();
+    }
 
-    QPen accZSeriesPen = accZSeries->pen();
-    accZSeriesPen.setWidth(3);
-    accZSeriesPen.setBrush(QBrush("orange"));
-    accZSeries->setPen(accZSeriesPen);
+//    QPen accZSeriesPen = accZSeries->pen();
+//    accZSeriesPen.setWidth(3);
+//    accZSeriesPen.setBrush(QBrush("orange"));
+//    accZSeries->setPen(accZSeriesPen);
     //accZValueAxis->setTitleText("Accelerometer Z");
     accZValueAxis->setTickCount(3);
     accZValueAxis->setLabelsAngle(-90);
     accZValueAxis->setLinePenColor(accZSeries->pen().color());
     accZSeries->attachAxis(timeAxis);
     accZSeries->attachAxis(accZValueAxis);
-    accZSeries->setName("accZ");
+    accZSeries->setName("accZ, g");
     accZSeries->setUseOpenGL(true);
+    if (!ui->accZCheckBox->isChecked()) {
+        accZSeries->hide();
+        accZValueAxis->hide();
+    }
+
+    //gyrXValueAxis->setTitleText("Gyroscope X");
+    gyrXValueAxis->setTickCount(3);
+    gyrXValueAxis->setLabelsAngle(-90);
+    gyrXValueAxis->setLinePenColor(gyrXSeries->pen().color());
+    gyrXSeries->attachAxis(timeAxis);
+    gyrXSeries->attachAxis(gyrXValueAxis);
+    gyrXSeries->setName("gyrX, °/s");
+    gyrXSeries->setUseOpenGL(true);
+    if (!ui->gyrXCheckBox->isChecked()) {
+        gyrXSeries->hide();
+        gyrXValueAxis->hide();
+    }
+
+    //gyrYValueAxis->setTitleText("Gyroscope Y");
+    gyrYValueAxis->setTickCount(3);
+    gyrYValueAxis->setLabelsAngle(-90);
+    gyrYValueAxis->setLinePenColor(gyrYSeries->pen().color());
+    gyrYSeries->attachAxis(timeAxis);
+    gyrYSeries->attachAxis(gyrYValueAxis);
+    gyrYSeries->setName("gyrY, °/s");
+    gyrYSeries->setUseOpenGL(true);
+    if (!ui->gyrYCheckBox->isChecked()) {
+        gyrYSeries->hide();
+        gyrYValueAxis->hide();
+    }
+
+//    QPen gyrZSeriesPen = accZSeries->pen();
+//    gyrZSeriesPen.setWidth(3);
+//    gyrZSeriesPen.setBrush(QBrush("pink"));
+//    gyrZSeries->setPen(gyrZSeriesPen);
+    //gyrZValueAxis->setTitleText("Gyroscope Z");
+    gyrZValueAxis->setTickCount(3);
+    gyrZValueAxis->setLabelsAngle(-90);
+    gyrZValueAxis->setLinePenColor(gyrZSeries->pen().color());
+    gyrZSeries->attachAxis(timeAxis);
+    gyrZSeries->attachAxis(gyrZValueAxis);
+    gyrZSeries->setName("gyrZ, °/s");
+    gyrZSeries->setUseOpenGL(true);
+    if (!ui->gyrZCheckBox->isChecked()) {
+        gyrZSeries->hide();
+        gyrZValueAxis->hide();
+    }
 }
 
 MainWindow::~MainWindow()
@@ -161,6 +234,17 @@ void MainWindow::on_openPortButton_clicked()
     if (serialPort->open(QIODevice::ReadWrite)){
         portOpened = true;
         ui->logOutput->append("Serial port <b>" + selectedPort + "</b> opened successfully");
+        QDateTime date = QDateTime::currentDateTime();
+        QString formattedTime = date.toString("dd-MM-yyyy-hh-mm-ss");
+        logFilename = QString("/home/maska/Documents/spear-log-%1.txt").arg(formattedTime);
+        logFile.setFileName(logFilename);
+        if (!logFile.open(QIODevice::ReadWrite) )
+        {
+            qDebug() << "Error openeing log file";
+            logFile.close();
+        } else {
+            logFileStream.setDevice(&logFile);
+        }
     } else {
         msgBox.setText(serialPort->errorString());
         msgBox.exec();
@@ -177,6 +261,10 @@ void MainWindow::on_closePortButton_clicked()
         portOpened = false;
         ui->logOutput->append("Serial port <b>" + selectedPort + "</b> closed");
         qDebug() << "Serial port " + selectedPort + " closed";
+        if (logFile.isOpen()) {
+            logFileStream.flush();
+            logFile.close();
+        }
     }
 }
 
@@ -224,18 +312,23 @@ void MainWindow::serialReadData()
        if (messageMatch.hasMatch()) {
            QString rawMessage = messageMatch.captured(0);
            QString message = rawMessage.mid(3, rawMessage.length() - 7);
+
+           if (logFile.isOpen()) {
+               logFileStream << message + "\n";
+           }
+
            QStringList messageParts = message.split(',');
 
            unsigned long messageTime = messageParts[0].toULong();
-           QString isInFligh;
+           QString curMode;
            if (messageParts.length() > 1) {
-               isInFligh = messageParts[1];
+               curMode = messageParts[1];
            }
 
            /*
             * Process message
             */
-           if (isInFligh == "F") {
+           if (curMode == "F" || curMode == "C") {
                if (messageTime > lastMessageTime) {
                    lastMessageTime = messageTime;
 
@@ -309,9 +402,9 @@ void MainWindow::serialReadData()
                    /*
                     * Accelerometer
                     */
-                   int accXReading = messageParts[6].toInt();
-                   int accYReading = messageParts[7].toInt();
-                   int accZReading = messageParts[8].toInt();
+                   float accXReading = messageParts[6].toFloat() / 4096;
+                   float accYReading = messageParts[7].toFloat() / 4096;
+                   float accZReading = messageParts[8].toFloat() / 4096;
 
                    accXReadings.append(QPointF(messageTime, accXReading));
                    double maxAccXReading = 0;
@@ -355,6 +448,54 @@ void MainWindow::serialReadData()
                    accZValueAxis->setRange(minAccZReading, maxAccZReading);
                    accZSeries->replace(accZReadings);
 
+                   /*
+                    * Gyroscope
+                    */
+                   float gyrXReading = messageParts[9].toFloat() / 32.8;
+                   float gyrYReading = messageParts[10].toFloat() / 32.8;
+                   float gyrZReading = messageParts[11].toFloat() / 32.8;
+
+                   gyrXReadings.append(QPointF(messageTime, gyrXReading));
+                   double maxGyrXReading = 0;
+                   double minGyrXReading = 0;
+                   foreach (QPointF p, gyrXReadings) {
+                       if (p.y() > maxGyrXReading) {
+                           maxGyrXReading = p.y();
+                       }
+                       if (p.y() < minGyrXReading) {
+                           minGyrXReading = p.y();
+                       }
+                   }
+                   gyrXValueAxis->setRange(minGyrXReading, maxGyrXReading);
+                   gyrXSeries->replace(gyrXReadings);
+
+                   gyrYReadings.append(QPointF(messageTime, gyrYReading));
+                   double maxGyrYReading = 0;
+                   double minGyrYReading = 0;
+                   foreach (QPointF p, gyrYReadings) {
+                       if (p.y() > maxGyrYReading) {
+                           maxGyrYReading = p.y();
+                       }
+                       if (p.y() < minGyrYReading) {
+                           minGyrYReading = p.y();
+                       }
+                   }
+                   gyrYValueAxis->setRange(minGyrYReading, maxGyrYReading);
+                   gyrYSeries->replace(gyrYReadings);
+
+                   gyrZReadings.append(QPointF(messageTime, gyrZReading));
+                   double maxGyrZReading = 0;
+                   double minGyrZReading = 0;
+                   foreach (QPointF p, gyrZReadings) {
+                       if (p.y() > maxGyrZReading) {
+                           maxGyrZReading = p.y();
+                       }
+                       if (p.y() < minGyrZReading) {
+                           minGyrZReading = p.y();
+                       }
+                   }
+                   gyrZValueAxis->setRange(minGyrZReading, maxGyrZReading);
+                   gyrZSeries->replace(gyrZReadings);
 
                    /*
                     * Time asix
@@ -373,7 +514,7 @@ void MainWindow::serialReadData()
     }
 
 
-   if (charBuffer.length() > 64) {
+   if (charBuffer.length() > 1024) {
        charBuffer = "";
        strBuffer = "";
    }
@@ -423,5 +564,125 @@ void MainWindow::on_stopButton_clicked()
     repeatCommandNum = 500;
     repeatCommandTimer->setInterval(25);
     repeatCommandTimer->start();
+}
+
+
+void MainWindow::on_magXCheckBox_clicked(bool checked)
+{
+    if (checked ) {
+        magnetomerXSeries->show();
+        magnetomerXValueAxis->show();
+    } else {
+        magnetomerXSeries->hide();
+        magnetomerXValueAxis->hide();
+    }
+}
+
+
+void MainWindow::on_magYCheckBox_clicked(bool checked)
+{
+    if (checked) {
+        magnetomerYSeries->show();
+        magnetomerYValueAxis->show();
+    } else {
+        magnetomerYSeries->hide();
+        magnetomerYValueAxis->hide();
+    }
+}
+
+
+void MainWindow::on_magZCheckBox_clicked(bool checked)
+{
+    if (checked) {
+        magnetomerZSeries->show();
+        magnetomerZValueAxis->show();
+    } else {
+        magnetomerZSeries->hide();
+        magnetomerZValueAxis->hide();
+    }
+}
+
+
+void MainWindow::on_accXCheckBox_clicked(bool checked)
+{
+    if (checked) {
+        accXSeries->show();
+        accXValueAxis->show();
+    } else {
+        accXSeries->hide();
+        accXValueAxis->hide();
+    }
+}
+
+
+void MainWindow::on_accYCheckBox_clicked(bool checked)
+{
+    if (checked) {
+        accYSeries->show();
+        accYValueAxis->show();
+    } else {
+        accYSeries->hide();
+        accYValueAxis->hide();
+    }
+}
+
+
+void MainWindow::on_accZCheckBox_clicked(bool checked)
+{
+    if (checked) {
+        accZSeries->show();
+        accZValueAxis->show();
+    } else {
+        accZSeries->hide();
+        accZValueAxis->hide();
+    }
+}
+
+
+void MainWindow::on_gyrXCheckBox_clicked(bool checked)
+{
+    if (checked) {
+        gyrXSeries->show();
+        gyrXValueAxis->show();
+    } else {
+        gyrXSeries->hide();
+        gyrXValueAxis->hide();
+    }
+}
+
+
+void MainWindow::on_gyrYCheckBox_clicked(bool checked)
+{
+    if (checked) {
+        gyrYSeries->show();
+        gyrYValueAxis->show();
+    } else {
+        gyrYSeries->hide();
+        gyrYValueAxis->hide();
+    }
+}
+
+
+void MainWindow::on_gyrZCheckBox_clicked(bool checked)
+{
+    if (checked) {
+        gyrZSeries->show();
+        gyrZValueAxis->show();
+    } else {
+        gyrZSeries->hide();
+        gyrZValueAxis->hide();
+    }
+}
+
+
+void MainWindow::on_barometerCheckBox_clicked(bool checked)
+{
+    if (checked) {
+        barometerSeries->show();
+        barometerValueAxis->show();
+    } else {
+        barometerSeries->hide();
+        barometerValueAxis->hide();
+    }
 }
 

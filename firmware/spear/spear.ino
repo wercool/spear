@@ -24,6 +24,7 @@ HMC5883L_Simple compass;
 
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
+HMC5883L_Simple::MagnetometerSample magSample;
 
 /*
  * Incoming commands
@@ -45,6 +46,7 @@ float calibrationReadings = 0;
 float calibrationAltitude = 0;
 float launchAltitude = 0;
 
+unsigned long calibrationTime = -1;
 unsigned long launchTime;
 
 float fAltitude = 0;
@@ -86,7 +88,15 @@ void setup() {
 
   // initialize mpu6050
   accelgyro.initialize();
-  Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+  accelgyro.setFullScaleAccelRange(MPU6050_ACCEL_FS_8);
+  accelgyro.setFullScaleGyroRange(MPU6050_GYRO_FS_1000);
+  accelgyro.setSleepEnabled(false);
+  accelgyro.setRate(5);
+//  Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+  Serial.print("FullScaleAccelRange: ");
+  Serial.println(accelgyro.getFullScaleAccelRange());
+  Serial.print("FullScaleGyroRange: ");
+  Serial.println(accelgyro.getFullScaleGyroRange());
   accelgyro.setI2CBypassEnabled(true); // set bypass mode for gateway to hmc5883L
 
   // initialize hmc5883l
@@ -152,6 +162,9 @@ void loop() {
     }
   } else if (curState == CALIBRATION) {
     if (currentMillis - prevStepTime < 2000) {
+      if (calibrationTime == -1) {
+        calibrationTime = currentMillis;
+      }
       float altitude = bmp.readAltitude();
       calibrationAltitude += altitude;
       calibrationReadings++;
@@ -159,7 +172,25 @@ void loop() {
       launchAltitude = (calibrationAltitude / calibrationReadings);
       float calibrationAltitude = altitude - launchAltitude;
 
-      sprintf(messageBuffer, "<m>%lu,CALIBRATION,%s%d.%02d</m>", currentMillis, calibrationAltitude > 0 ? "" : "-", abs((int)calibrationAltitude), abs((int)(calibrationAltitude * 100) % 100));          
+      /*
+       * Barometer and MEMS readings
+       */
+      magSample = compass.GetMagnetometerSample();
+      accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+
+      sprintf(messageBuffer, "<m>%lu,C,%s%d.%02d,%d,%d,%d,%d,%d,%d,%d,%d,%d</m>", 
+                            currentMillis - calibrationTime,
+                            calibrationAltitude > 0 ? "" : "-", abs((int)calibrationAltitude), abs((int)(calibrationAltitude * 100) % 100),
+                            magSample.X,
+                            magSample.Y,
+                            magSample.Z,
+                            ax,
+                            ay,
+                            az,
+                            gx,
+                            gy,
+                            gz
+          );
       Serial.print(messageBuffer);
       memset(messageBuffer, 0, sizeof(messageBuffer));
     } else {
@@ -169,6 +200,7 @@ void loop() {
     sendMessage(0, 100, 10, "LAUNCH!");
     digitalWrite(START_PIN, true);
     curState = FLIGHT;
+    calibrationTime = currentMillis - calibrationTime;
     launchTime = currentMillis;
     digitalWrite(RADIO_TRANSMIT_PIN, true);
   }
@@ -189,7 +221,7 @@ void loop() {
      * Barometer and MEMS readings
      */
     fAltitude = bmp.readAltitude() - launchAltitude;
-    HMC5883L_Simple::MagnetometerSample magSample = compass.GetMagnetometerSample();
+    magSample = compass.GetMagnetometerSample();
     accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
     if (curState == FLIGHT) {
@@ -198,7 +230,7 @@ void loop() {
         maxfAltitudeTime = currentMillis;
       }
 
-      if (maxfAltitude > 2.0 && fAltitude < maxfAltitude - 2.0 && currentMillis - maxfAltitudeTime > 2000) {
+      if (fAltitude < 50.0 && maxfAltitude > 2.0 && fAltitude < maxfAltitude - 2.0 && currentMillis - maxfAltitudeTime > 2000) {
         curState = PARACHUTE1;
         parachute1Time = currentMillis;
       }
@@ -242,15 +274,18 @@ void loop() {
       }
     }
 
-    sprintf(messageBuffer, "<m>%lu,F,%s%d.%02d,%d,%d,%d,%d,%d,%d</m>", 
-                            currentMillis - launchTime, fAltitude > 0 ? "" : "-", abs((int)fAltitude), abs((int)(fAltitude * 100) % 100),
+    sprintf(messageBuffer, "<m>%lu,F,%s%d.%02d,%d,%d,%d,%d,%d,%d,%d,%d,%d</m>", 
+                            currentMillis - launchTime + calibrationTime, fAltitude > 0 ? "" : "-", abs((int)fAltitude), abs((int)(fAltitude * 100) % 100),
                             magSample.X,
                             magSample.Y,
                             magSample.Z,
                             ax,
                             ay,
-                            az
-          );          
+                            az,
+                            gx,
+                            gy,
+                            gz
+          );
     Serial.print(messageBuffer);
     memset(messageBuffer, 0, sizeof(messageBuffer));
   }
