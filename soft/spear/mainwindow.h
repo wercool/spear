@@ -62,6 +62,8 @@ private slots:
 
     void on_gyrZCheckBox_clicked(bool checked);
 
+    void on_openLogPushButton_clicked();
+
 private:
     Ui::MainWindow *ui;
     QSerialPort *serialPort;
@@ -144,5 +146,6 @@ private:
      * Messages
      */
     unsigned long lastMessageTime = 0;
+    bool processMessage(QString message);
 };
 #endif // MAINWINDOW_H
